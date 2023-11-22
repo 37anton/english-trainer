@@ -23,6 +23,9 @@ class Game
     #[ORM\Column]
     private ?int $score = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?array $wordsId = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,6 +63,18 @@ class Game
     public function setScore(int $score): static
     {
         $this->score = $score;
+
+        return $this;
+    }
+
+    public function getWordsId(): ?array
+    {
+        return $this->wordsId;
+    }
+
+    public function setWordsId(?array $wordsId): static
+    {
+        $this->wordsId = $wordsId;
 
         return $this;
     }

@@ -13,7 +13,7 @@ class TraductionFormType extends AbstractType
     {
         $builder
             ->add('translatedWord', TextType::class, [
-                'label' => 'Your translation'
+                'label' => 'Your translation',
             ]);
     }
 
