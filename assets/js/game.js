@@ -4,6 +4,10 @@ document.getElementById('startGameButton').addEventListener('click', function() 
 
 function startGame() {
     console.log("I press the button that starts the game");
+    localStorage.setItem('currentScore', 0);
+
+    // Cacher le bouton de démarrage
+    document.getElementById('startGameButton').style.display = 'none';
 
     fetch('/game/start', {
         method: 'GET',
@@ -21,12 +25,10 @@ function startGame() {
 }
 
 function handleGameStartResponse(data) {
-    if (data.gameId) {
-        console.log("Partie commencée, ID de la partie :", data.gameId);
-
-        displayWord(data.firstWord);
-        localStorage.setItem('currentGameId', data.gameId);
-       
+    if (data.gameId && data.wordsList) {
+        localStorage.setItem('wordsList', JSON.stringify(data.wordsList));
+        localStorage.setItem('currentWordIndex', 0); // Initialiser l'index du mot actuel
+        displayWord(data.wordsList[0]);
     } else {
         console.error("Erreur lors du démarrage de la partie");
     }
@@ -64,12 +66,12 @@ function verifyTranslation() {
 function handleVerificationResponse(data) {
     if (data.correct) {
         console.log("Réponse correcte !");
-        incrementScore();
-        displayNextWord();
+        updateAndDisplayScore(true);
     } else {
         console.log("Réponse incorrecte.");
-        displayNextWord();
+        updateAndDisplayScore(false);
     }
+    displayNextWord();
 }
 
 function incrementScore() {
@@ -79,5 +81,45 @@ function incrementScore() {
 }
 
 function displayNextWord() {
-    // Logique pour charger et afficher le mot suivant
+    let wordsList = JSON.parse(localStorage.getItem('wordsList'));
+    let currentIndex = parseInt(localStorage.getItem('currentWordIndex')) || 0;
+
+    currentIndex++;
+    if (currentIndex < wordsList.length) {
+        localStorage.setItem('currentWordIndex', currentIndex);
+        displayWord(wordsList[currentIndex]);
+    } else {
+        console.log("Fin de la partie !");
+        endGame();
+    }
+}
+
+function updateAndDisplayScore(isCorrect) {
+    let score = parseInt(localStorage.getItem('currentScore')) || 0;
+    
+    if (isCorrect) {
+        score++;
+        localStorage.setItem('currentScore', score);
+    }
+
+    console.log("Score actuel:", score);
+}
+
+function endGame() {
+    let finalScore = localStorage.getItem('currentScore');
+    let gameId = localStorage.getItem('currentGameId');
+
+    fetch('/game/update-score', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ gameId: gameId, finalScore: finalScore })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data.message);
+        // Ici, vous pouvez gérer la fin de la partie, afficher les résultats, etc.
+    })
+    .catch(error => console.error("Erreur lors de la mise à jour du score :", error));
 }

@@ -49,11 +49,10 @@ class PlayController extends AbstractController
         return $this->json([
             'message' => 'Partie commencée',
             'gameId' => $game->getId(),
-            'firstWord' => [
-                'id' => $firstWord->getId(),
-                'translation' => $firstWord->getFrenchWord(),
-            ],
-
+            'wordsList' => array_map(fn ($word) => [
+                'id' => $word->getId(),
+                'translation' => $word->getFrenchWord()
+            ], $wordsList),
         ]);
     }
 
@@ -73,5 +72,22 @@ class PlayController extends AbstractController
             // Logique pour gérer une réponse incorrecte
             return $this->json(['correct' => false]);
         }
+    }
+
+    #[Route('/game/update-score', name: 'game_update_score')]
+    public function updateScore(Request $request, EntityManagerInterface $em): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        $gameId = $data['gameId'];
+        $finalScore = $data['finalScore'];
+
+        $game = $em->getRepository(Game::class)->find($gameId);
+        if ($game) {
+            $game->setScore($finalScore);
+            $em->flush();
+            return $this->json(['message' => 'Score mis à jour']);
+        }
+
+        return $this->json(['error' => 'Partie non trouvée'], 404);
     }
 }
